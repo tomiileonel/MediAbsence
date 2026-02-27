@@ -69,3 +69,11 @@ Abre `http://localhost:3000` en tu navegador para ver la aplicación en funciona
 ## 📂 Arquitectura Destacada
 
 El proyecto destaca por la separación de responsabilidades utilizando la arquitectura de App Router de Next.js. Las operaciones críticas de base de datos se manejan a través de Server Actions (`src/app/actions/...`), lo que elimina la necesidad de crear rutas de API tradicionales para las mutaciones de datos, reduciendo el código boilerplate y mejorando el rendimiento y la seguridad.
+
+---
+
+<div align="center">
+  <h2><b>❬ LR ❭</b></h2>
+  <p>&copy; 2026 <b>Tomás Leonel Ramón</b>. Todos los derechos reservados.</p>
+  <p><i>El código fuente, diseño y arquitectura de este proyecto son de propiedad exclusiva. </i></p>
+</div>
