@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MediAbsence 🏥
 
-## Getting Started
+**MediAbsence** es una plataforma web desarrollada para la gestión eficiente de asistencias e inasistencias de médicos residentes. El sistema permite a los administradores llevar un control estricto de las faltas, mientras que los residentes pueden visualizar su historial de asistencia y el impacto económico (deducciones) que estas inasistencias generan en su salario.
 
-First, run the development server:
+## 🚀 Características Principales
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+* **Autenticación y Autorización Basada en Roles:** Sistema de login seguro diferenciando accesos y vistas para Administradores y Residentes.
+* **Dashboard de Administración:** 
+  * Alta y baja de usuarios (Residentes).
+  * Registro y gestión de inasistencias con carga de motivos/notas.
+* **Dashboard de Residentes:** 
+  * Visualización del historial de inasistencias.
+  * Cálculo automático y visualización de deducciones salariales estimadas por días de ausencia.
+* **Seguridad:** Mutaciones y consultas a la base de datos protegidas íntegramente mediante **Server Actions**, asegurando que la lógica de negocio se ejecute de forma segura en el servidor.
+* **UI/UX Moderna:** Interfaz limpia, responsiva y con animaciones fluidas para una experiencia de usuario de alta calidad.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Stack Tecnológico
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Este proyecto está construido con las últimas herramientas del ecosistema de React:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+* **Framework:** [Next.js](https://nextjs.org/) (App Router)
+* **Librería UI:** [React 19](https://react.dev/) (Aprovechando Server Components y Server Actions nativos)
+* **Lenguaje:** TypeScript
+* **Estilos:** [Tailwind CSS v4](https://tailwindcss.com/) + Shadcn/UI + tw-animate-css
+* **Base de Datos & ORM:** [Prisma](https://www.prisma.io/)
+* **Autenticación:** [Next-Auth v5](https://authjs.dev/) (Auth.js)
+* **Criptografía:** bcryptjs (Hash de contraseñas)
 
-## Learn More
+## ⚙️ Instalación y Configuración Local
 
-To learn more about Next.js, take a look at the following resources:
+Para correr este proyecto en tu entorno local, sigue estos pasos:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/tu-usuario/mediabsence.git
+   cd mediabsence
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Instalar las dependencias:**
+   ```bash
+   npm install
+   # o
+   pnpm install
+   ```
 
-## Deploy on Vercel
+3. **Configurar las variables de entorno:**
+   Crea un archivo `.env` en la raíz del proyecto y agrega tu URL de conexión a la base de datos y tu secreto de autenticación:
+   ```env
+   DATABASE_URL="mysql://usuario:password@localhost:3306/mediabsence"
+   AUTH_SECRET="tu_secreto_generado_aqui"
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Sincronizar la base de datos:**
+   ```bash
+   npx prisma db push
+   # o si prefieres usar migraciones:
+   npx prisma migrate dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Iniciar el servidor de desarrollo:**
+   ```bash
+   npm run dev
+   # o
+   pnpm dev
+   ```
+
+Abre `http://localhost:3000` en tu navegador para ver la aplicación en funcionamiento.
+
+## 📂 Arquitectura Destacada
+
+El proyecto destaca por la separación de responsabilidades utilizando la arquitectura de App Router de Next.js. Las operaciones críticas de base de datos se manejan a través de Server Actions (`src/app/actions/...`), lo que elimina la necesidad de crear rutas de API tradicionales para las mutaciones de datos, reduciendo el código boilerplate y mejorando el rendimiento y la seguridad.
