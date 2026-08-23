@@ -1,79 +1,77 @@
-# MediAbsence 🏥
+# MediAbsence
 
-**MediAbsence** es una plataforma web desarrollada para la gestión eficiente de asistencias e inasistencias de médicos residentes. El sistema permite a los administradores llevar un control estricto de las faltas, mientras que los residentes pueden visualizar su historial de asistencia y el impacto económico (deducciones) que estas inasistencias generan en su salario.
+MediAbsence es una aplicación Next.js para gestionar asistencia y solicitudes de ausencia de personal de salud con control de acceso por rol.
 
-## 🚀 Características Principales
+## Estado implementado
 
-* **Autenticación y Autorización Basada en Roles:** Sistema de login seguro diferenciando accesos y vistas para Administradores y Residentes.
-* **Dashboard de Administración:** 
-  * Alta y baja de usuarios (Residentes).
-  * Registro y gestión de inasistencias con carga de motivos/notas.
-* **Dashboard de Residentes:** 
-  * Visualización del historial de inasistencias.
-  * Cálculo automático y visualización de deducciones salariales estimadas por días de ausencia.
-* **Seguridad:** Mutaciones y consultas a la base de datos protegidas íntegramente mediante **Server Actions**, asegurando que la lógica de negocio se ejecute de forma segura en el servidor.
-* **UI/UX Moderna:** Interfaz limpia, responsiva y con animaciones fluidas para una experiencia de usuario de alta calidad.
+- Login con Auth.js Credentials, bcrypt y sesión JWT tipada.
+- RBAC server-side para `ADMIN`, `JEFE`, `PROFESIONAL` y `RESIDENTE`.
+- Registro atómico de ingreso/salida con día de negocio configurable.
+- Solicitud, consulta y revisión de ausencias.
+- Auditoría transaccional de cambios críticos.
+- Prisma sobre PostgreSQL con migración versionada y seed seguro.
+- Tests unitarios con Vitest y workflow de CI.
 
-## 🛠️ Stack Tecnológico
+El motor de payroll existe como cálculo puro orientado por política. No se conecta todavía a salarios ni genera deducciones reales: faltan reglas de negocio y legales aprobadas para divisor, feriados, jornadas parciales, redondeo, retención y autorización.
 
-Este proyecto está construido con las últimas herramientas del ecosistema de React:
+## Stack
 
-* **Framework:** [Next.js](https://nextjs.org/) (App Router)
-* **Librería UI:** [React 19](https://react.dev/) (Aprovechando Server Components y Server Actions nativos)
-* **Lenguaje:** TypeScript
-* **Estilos:** [Tailwind CSS v4](https://tailwindcss.com/) + Shadcn/UI + tw-animate-css
-* **Base de Datos & ORM:** [Prisma](https://www.prisma.io/)
-* **Autenticación:** [Next-Auth v5](https://authjs.dev/) (Auth.js)
-* **Criptografía:** bcryptjs (Hash de contraseñas)
+- Next.js 16 App Router, React 19 y TypeScript strict.
+- Prisma 5.22 sobre PostgreSQL.
+- Auth.js 5 beta con Credentials y Prisma Adapter.
+- Tailwind CSS v4 y componentes Radix/shadcn existentes.
+- pnpm 11.19.
 
-## ⚙️ Instalación y Configuración Local
+## Desarrollo local
 
-Para correr este proyecto en tu entorno local, sigue estos pasos:
+1. Instala Node.js 20+ y pnpm 11.19.
+2. Instala dependencias:
 
-1. **Clonar el repositorio:**
    ```bash
-   git clone https://github.com/tu-usuario/mediabsence.git
-   cd mediabsence
-   ```
-
-2. **Instalar las dependencias:**
-   ```bash
-   npm install
-   # o
    pnpm install
    ```
 
-3. **Configurar las variables de entorno:**
-   Crea un archivo `.env` en la raíz del proyecto y agrega tu URL de conexión a la base de datos y tu secreto de autenticación:
-   ```env
-   DATABASE_URL="mysql://usuario:password@localhost:3306/mediabsence"
-   AUTH_SECRET="tu_secreto_generado_aqui"
+3. Copia `.env.example` a `.env` y define `DATABASE_URL`, `AUTH_SECRET`, `BUSINESS_TIMEZONE` y, sólo para seed, `SEED_PASSWORD`.
+4. Genera el cliente y aplica la migración en una base PostgreSQL de desarrollo:
+
+   ```bash
+   pnpm db:generate
+   pnpm db:migrate
+   pnpm db:seed
    ```
 
-4. **Sincronizar la base de datos:**
-   ```bash
-   npx prisma db push
-   # o si prefieres usar migraciones:
-   npx prisma migrate dev
-   ```
+5. Inicia la aplicación:
 
-5. **Iniciar el servidor de desarrollo:**
    ```bash
-   npm run dev
-   # o
    pnpm dev
    ```
 
-Abre `http://localhost:3000` en tu navegador para ver la aplicación en funcionamiento.
+No se deben ejecutar `db:migrate` o `db:seed` contra producción sin revisar el plan de migración y la recuperación.
 
-## 📂 Arquitectura Destacada
+## Quality gates
 
-El proyecto destaca por la separación de responsabilidades utilizando la arquitectura de App Router de Next.js. Las operaciones críticas de base de datos se manejan a través de Server Actions (`src/app/actions/...`), lo que elimina la necesidad de crear rutas de API tradicionales para las mutaciones de datos, reduciendo el código boilerplate y mejorando el rendimiento y la seguridad.
+```bash
+pnpm lint
+pnpm exec tsc --noEmit
+pnpm test
+pnpm build
+```
 
----
+La migración inicial es una cutover de PostgreSQL para un esquema sin migraciones previas. No contiene una migración automática de datos desde el MySQL histórico; esa operación requiere un plan separado y validación de integridad.
 
-<div align="center">
-  <h2><b>❬ LR ❭</b></h2>
-  <p>&copy; 2026 <b>Tomás Leonel Ramón</b>. Todos los derechos reservados.</p>
-  <p><i>El código fuente, diseño y arquitectura de este proyecto son de propiedad exclusiva. </i></p>
-</div>
+## Roles provisionales
+
+- `RESIDENTE` y `PROFESIONAL`: gestionan su asistencia y sus propias solicitudes.
+- `JEFE` y `ADMIN`: pueden revisar solicitudes pendientes.
+- `ADMIN`: dispone del dashboard administrativo.
+
+Esta matriz es una política least-privilege técnica hasta que el negocio confirme el alcance por organización/servicio. No existe aislamiento multi-tenant en el schema actual.
+
+## Documentación de ingeniería
+
+- [Revisión del plan de implementación](docs/engineering/16-implementation-plan-review.md)
+- [Estado de implementación](docs/engineering/17-implementation-status.md)
+- [ADRs](docs/engineering/architecture-decisions/)
+- [Preparación de release](docs/engineering/release-readiness.md)
+
+La ausencia de un archivo `LICENSE` sigue siendo una decisión legal pendiente; no se inventa una licencia por código.

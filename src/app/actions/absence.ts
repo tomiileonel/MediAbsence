@@ -1,44 +1,72 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { auth } from "../../../auth";
+import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { RequestType } from "@prisma/client";
+import { ValidationError } from "@/lib/errors/domain-error";
+import {
+  parseAbsenceRequestFormData,
+  reviewAbsenceRequestInputSchema,
+} from "@/lib/validation/absence.schema";
+import type { AbsenceRequestInput } from "@/lib/validation/absence.schema";
+import { requireAuth, requireRole } from "@/modules/auth/guards";
+import {
+  createAbsenceRequestForUser,
+  listAbsenceRequestsForUser,
+  listPendingAbsenceRequests,
+  reviewAbsenceRequestForUser,
+} from "@/modules/absences/application/absence-service";
+import { toAbsenceRequestSummaries, toAbsenceRequestSummary } from "@/modules/absences/absence-dto";
 
 export async function createAbsenceRequest(formData: FormData) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
+  const actor = await requireAuth();
+  let input: AbsenceRequestInput;
 
-    const type = formData.get("type") as RequestType;
-    const startDate = formData.get("startDate") as string;
-    const endDate = formData.get("endDate") as string;
-    const reason = formData.get("reason") as string;
-
-    if (!type || !startDate || !endDate || !reason) {
-        throw new Error("Faltan campos obligatorios.");
+  try {
+    input = parseAbsenceRequestFormData(formData);
+  } catch (error: unknown) {
+    if (error instanceof z.ZodError) {
+      throw new ValidationError("Revisa el tipo, las fechas y el motivo de la solicitud.");
     }
 
-    const request = await prisma.absenceRequest.create({
-        data: {
-            userId: session.user.id,
-            type,
-            startDate: new Date(startDate),
-            endDate: new Date(endDate),
-            reason,
-            status: "PENDING",
-        },
-    });
+    throw error;
+  }
 
-    revalidatePath("/solicitudes");
-    return request;
+  const request = await createAbsenceRequestForUser(actor.id, input);
+  revalidatePath("/solicitar");
+  revalidatePath("/solicitudes");
+  revalidatePath("/jefe");
+  revalidatePath("/admin");
+  return toAbsenceRequestSummary(request);
+}
+export async function getMyRequests() {
+  const actor = await requireAuth();
+  return toAbsenceRequestSummaries(await listAbsenceRequestsForUser(actor.id));
 }
 
-export async function getMyRequests() {
-    const session = await auth();
-    if (!session?.user?.id) return [];
+export async function getPendingRequests() {
+  await requireRole("ADMIN", "JEFE");
+  return toAbsenceRequestSummaries(await listPendingAbsenceRequests());
+}
 
-    return prisma.absenceRequest.findMany({
-        where: { userId: session.user.id },
-        orderBy: { createdAt: "desc" },
-    });
+export async function reviewAbsenceRequest(
+  requestId: string,
+  decision: "APPROVED" | "REJECTED",
+  notes?: string,
+) {
+  const actor = await requireRole("ADMIN", "JEFE");
+  const parsedInput = reviewAbsenceRequestInputSchema.safeParse({
+    requestId,
+    decision,
+    notes,
+  });
+
+  if (!parsedInput.success) {
+    throw new ValidationError("Revisa la decisión, el identificador y las notas.");
+  }
+
+  const request = await reviewAbsenceRequestForUser(actor.id, parsedInput.data);
+  revalidatePath("/jefe");
+  revalidatePath("/admin");
+  revalidatePath("/solicitudes");
+  return toAbsenceRequestSummary(request);
 }

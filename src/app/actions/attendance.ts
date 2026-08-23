@@ -1,84 +1,32 @@
 "use server";
 
-import { prisma } from "@/lib/prisma";
-import { auth } from "../../../auth";
 import { revalidatePath } from "next/cache";
+import { requireAuth } from "@/modules/auth/guards";
+import {
+  checkInForUser,
+  checkOutForUser,
+  getTodayAttendanceForUser,
+} from "@/modules/attendance/application/attendance-service";
+import { toAttendanceSummary } from "@/modules/attendance/attendance-dto";
 
 export async function getTodayAttendance() {
-    const session = await auth();
-    if (!session?.user?.id) return null;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return prisma.attendance.findUnique({
-        where: {
-            userId_date: {
-                userId: session.user.id,
-                date: today,
-            },
-        },
-    });
+  const actor = await requireAuth();
+  return toAttendanceSummary(await getTodayAttendanceForUser(actor.id));
 }
-
 export async function checkIn(location?: string) {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const existing = await prisma.attendance.findUnique({
-        where: {
-            userId_date: {
-                userId: session.user.id,
-                date: today,
-            },
-        },
-    });
-
-    if (existing) throw new Error("Ya registraste tu ingreso hoy.");
-
-    const attendance = await prisma.attendance.create({
-        data: {
-            userId: session.user.id,
-            date: today,
-            timeIn: new Date(),
-            location: location || null,
-            status: "PRESENT",
-        },
-    });
-
-    revalidatePath("/"); // Refrescar UI que dependa de esto
-    return attendance;
+  const actor = await requireAuth();
+  const attendance = await checkInForUser(actor.id, location);
+  revalidatePath("/");
+  revalidatePath("/residente");
+  revalidatePath("/profesional");
+  return toAttendanceSummary(attendance);
 }
 
 export async function checkOut() {
-    const session = await auth();
-    if (!session?.user?.id) throw new Error("Unauthorized");
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const existing = await prisma.attendance.findUnique({
-        where: {
-            userId_date: {
-                userId: session.user.id,
-                date: today,
-            },
-        },
-    });
-
-    if (!existing) throw new Error("No hay ingreso registrado hoy.");
-    if (existing.timeOut) throw new Error("Ya registraste tu salida hoy.");
-
-    const attendance = await prisma.attendance.update({
-        where: { id: existing.id },
-        data: {
-            timeOut: new Date(),
-        },
-    });
-
-    revalidatePath("/");
-    return attendance;
+  const actor = await requireAuth();
+  const attendance = await checkOutForUser(actor.id);
+  revalidatePath("/");
+  revalidatePath("/residente");
+  revalidatePath("/profesional");
+  return toAttendanceSummary(attendance);
 }
