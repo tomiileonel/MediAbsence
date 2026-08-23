@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { DashboardShell } from "@/app/(dashboard)/_components/dashboard-shell";
 import { AbsenceRequestList } from "@/app/(dashboard)/_components/absence-request-list";
 import { toAbsenceRequestSummaries } from "@/modules/absences/absence-dto";
 import { listAbsenceRequestsForUser } from "@/modules/absences/application/absence-service";
@@ -21,10 +22,19 @@ export default async function AbsenceRequestsPage() {
   const requests = toAbsenceRequestSummaries(await listAbsenceRequestsForUser(actor.id));
 
   return (
-    <main className="min-h-screen bg-muted/20 px-4 py-8">
-      <div className="mx-auto max-w-3xl">
-        <AbsenceRequestList requests={requests} />
+    <DashboardShell
+      actor={actor}
+      title="Historial de Solicitudes"
+      description="Consulta todas tus licencias, vacaciones y ausencias tramitadas."
+    >
+      <div className="max-w-4xl mx-auto">
+        <AbsenceRequestList
+          requests={requests}
+          title="Todas mis solicitudes"
+          description="Historial cronológico completo de solicitudes y sus dictámenes."
+        />
       </div>
-    </main>
+    </DashboardShell>
   );
 }
+

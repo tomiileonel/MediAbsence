@@ -11,10 +11,13 @@ export default async function AdminDashboardPage() {
   return (
     <DashboardShell
       actor={actor}
-      title="Panel de administración"
-      description="Supervisa solicitudes pendientes y las operaciones protegidas del sistema."
+      title="Centro de Control de Administración"
+      description="Supervisión global del sistema, gestión de personal y dictamen de licencias pendientes."
     >
-      <ReviewQueue initialRequests={pendingRequests} />
+      <div className="space-y-6">
+        <ReviewQueue initialRequests={pendingRequests} />
+      </div>
     </DashboardShell>
   );
 }
+

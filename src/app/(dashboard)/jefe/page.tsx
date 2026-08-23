@@ -11,10 +11,13 @@ export default async function ChiefDashboardPage() {
   return (
     <DashboardShell
       actor={actor}
-      title="Panel de jefe"
-      description="Revisa solicitudes pendientes dentro del alcance autorizado."
+      title="Panel de Jefatura de Servicio"
+      description="Revisión técnica y dictamen de licencias, vacaciones y permisos extraordinarios."
     >
-      <ReviewQueue initialRequests={pendingRequests} />
+      <div className="space-y-6">
+        <ReviewQueue initialRequests={pendingRequests} />
+      </div>
     </DashboardShell>
   );
 }
+
