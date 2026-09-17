@@ -1,7 +1,7 @@
 # Stack Context — MediAbsence
 
 ## Runtime
-- Node: Node.js 20+
+- Node: Node.js 24+ (mínimo 22.13+ requerido por pnpm 11 y node:sqlite)
 - Package manager: pnpm
 
 ## Web

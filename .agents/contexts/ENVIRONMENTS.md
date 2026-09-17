@@ -1,7 +1,7 @@
 # Environments Context — MediAbsence
 
 ## Dev
-- Local runtime: Node.js 20+, pnpm 11+.
+- Local runtime: Node.js 24+ (mínimo 22.13+), pnpm 11+.
 - Database: PostgreSQL local o branch Neon Serverless (`DATABASE_URL`).
 - Auth Secret: `AUTH_SECRET` generado localmente.
 - Commands: `pnpm dev`, `pnpm test`, `pnpm typecheck`, `pnpm lint`.
