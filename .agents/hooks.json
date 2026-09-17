@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./scripts/antigravity-safety-gate.mjs",
+            "command": "node ./.agents/scripts/antigravity-safety-gate.mjs",
             "timeout": 5
           }
         ]
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./scripts/antigravity-post-command.mjs",
+            "command": "node ./.agents/scripts/antigravity-post-command.mjs",
             "timeout": 10
           }
         ]
@@ -36,8 +36,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node ./scripts/antigravity-stop-gate.mjs",
-            "timeout": 15
+            "command": "node ./.agents/scripts/antigravity-stop-gate.mjs",
+            "timeout": 120
           }
         ]
       }

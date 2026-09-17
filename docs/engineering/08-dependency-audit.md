@@ -19,7 +19,7 @@ El proyecto tiene `pnpm-lock.yaml` pero README documenta tanto npm como pnpm. Es
 ## Riesgos
 
 - **DEP-001:** `next-auth` beta en superficie crítica de autenticación (`HIGH`, G4).
-- **DEP-002:** Prisma 5.22 y Next 16 deben validarse conjuntamente con el engine MySQL real (`MEDIUM`, G3).
+- **DEP-002:** Prisma 5.22 y Next 16 deben validarse conjuntamente con el engine PostgreSQL real (`MEDIUM`, G3).
 - **DEP-003:** package ranges `^` permiten drift si lockfile no se respeta (`MEDIUM`, G8).
 - **DEP-004:** no hay evidencia de política de vulnerability scanning o SBOM (`UNKNOWN`, G8).
 - **DEP-005:** README mezcla npm/pnpm mientras el lockfile canónico es pnpm (`LOW/MEDIUM`, G8).

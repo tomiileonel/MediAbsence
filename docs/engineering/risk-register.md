@@ -14,7 +14,7 @@
 | RISK-003 | HIGH | Security / API | G4 | OPEN | VERIFIED | `/api` allow-by-default y middleware excluyente |
 | RISK-004 | BLOCKER | Testing | G6 | OPEN | VERIFIED | sin test script, runner o test files |
 | RISK-005 | HIGH | Architecture | G2 | OPEN | VERIFIED | no ADR de aplicación visible |
-| RISK-006 | HIGH | Database | G3 | OPEN | VERIFIED | MySQL en schema vs PostgreSQL/SQLite en context |
+| RISK-006 | HIGH | Database | G3 | RESOLVED | VERIFIED | Reconciliado: PostgreSQL 16+ adoptado en schema, context y migraciones |
 | RISK-007 | HIGH | Backend | G4/G5 | OPEN | VERIFIED | casts de FormData y fechas sin schema |
 | RISK-008 | HIGH | Domain | G1 | OPEN | INFERRED | roles README/context/schema no coinciden |
 | RISK-009 | HIGH | Database | G3 | OPEN | INFERRED | cascada User → historial sin política de retención |

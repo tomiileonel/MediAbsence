@@ -2,17 +2,19 @@
 
 ## Product
 - Name: MediAbsence
-- Purpose: Medical absence and leave tracking / management system with role-based access control.
-- Primary users: Administrators, Doctors / Medical Staff, HR, and Employees.
+- Purpose: Sistema de gestión hospitalaria de asistencias, presentismo y licencias médicas para residencias médicas y personal asistencial.
+- Primary users: Administradores, Jefes de Servicio, Médicos Profesionales y Médicos Residentes.
 
 ## Critical flows
-- Authentication & RBAC (Admin, Doctor, Employee).
-- Medical certificate / absence filing, review, and approval workflow.
-- Statistics, absence analytics, and reporting dashboards.
+- Autenticación y RBAC multicapa (`ADMIN`, `JEFE`, `PROFESIONAL`, `RESIDENTE`).
+- Registro diario de ingreso y egreso hospitalario (`checkIn`, `checkOut`).
+- Creación y dictamen de licencias médicas con prevención de solapamiento y auto-dictamen.
+- Proyección salarial y cálculo de deducciones de nómina (Payroll ADR-0004).
+- Pistas de auditoría inmutables para cumplimiento clínico (HIPAA).
 
 ## Scale
-- Current users: Internal / Corporate scale.
-- Peak requests/sec: Standard business hours workload.
+- Current users: Escala institucional hospitalaria.
+- Peak requests/sec: Picos en horarios de cambio de guardia y fichaje matutino.
 
 ## Availability target
 - 99.9%

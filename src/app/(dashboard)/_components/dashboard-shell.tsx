@@ -91,7 +91,7 @@ export function DashboardShell({
                 </p>
                 <div className="flex items-center gap-1 mt-0.5">
                   <RoleIcon className="size-2.5 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground font-medium">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {roleMeta.label}
                   </span>
                 </div>

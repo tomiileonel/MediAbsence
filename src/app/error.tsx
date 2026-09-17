@@ -28,7 +28,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
             Ocurrió un inconveniente al cargar la información solicitada. Puedes reintentar la operación o regresar a la portada.
           </p>
           {error?.digest && (
-            <p className="text-[10px] text-muted-foreground/60 font-mono">
+            <p className="text-xs text-muted-foreground font-mono">
               Código de referencia: {error.digest}
             </p>
           )}

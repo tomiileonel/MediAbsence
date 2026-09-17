@@ -1,39 +1,24 @@
-# API Context
-
-This file describes the API contract of THIS project.
+# API Context — MediAbsence
 
 ## API style
-- REST / Server Actions / GraphQL / Other:
-- Public API:
-- Internal API:
+- Server Actions (Next.js App Router).
+- Internal Server Actions en `src/app/actions/*`: `attendance.ts`, `absence.ts`, `auth.ts`.
 
 ## Versioning
-- Strategy:
-- Current version:
+- Internal application actions; no public third-party versioned REST exposed.
 
 ## Authentication
-- Method:
-- Required scopes/permissions:
+- Auth.js v5 JWT session cookies (`requireAuth()`).
 
 ## Authorization
-- Policy model:
-- Tenant/resource scoping:
+- Policy model: RBAC (`requireRole("ADMIN", "JEFE")`, `requireAuth()`).
+- Resource scoping: Verificación estricta de propiedad (`userId === actor.id`) o rol supervisor.
 
 ## Request conventions
-- Validation:
-- Pagination:
-- Filtering:
-- Sorting:
-- Idempotency:
+- Validación: Esquemas Zod en `src/lib/validation/*` aplicados en el borde de cada Server Action.
+- Parseo FormData seguro: `parseAbsenceRequestFormData`.
 
 ## Response conventions
-- Success envelope:
-- Error envelope:
-- Error codes:
-
-## Compatibility
-- Backward compatibility requirements:
-- Deprecation policy:
-
-## Open questions
-- 
+- Envelope canónico: `ActionResult<T>` = `{ ok: true, data: T } | { ok: false, error: string }`.
+- Helper constructores: `actionOk(data)` y `actionFailed(error)`.
+- Error translation: `getActionErrorMessage` mapea `DomainError` a mensajes explicativos seguros en producción sin fugar detalles de infraestructura o base de datos.

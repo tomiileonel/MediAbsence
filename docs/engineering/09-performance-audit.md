@@ -18,7 +18,7 @@
 - Volumen de datos y cardinalidad por usuario.
 - Latencia p95/p99.
 - Cache hit rate, Web Vitals, bundle size y runtime regional.
-- Planes de consulta e índices efectivos en MySQL.
+- Planes de consulta e índices efectivos en PostgreSQL.
 
 ## Riesgos
 

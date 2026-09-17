@@ -4,7 +4,10 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "MediAbsence - Gestión Médica",
@@ -18,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.className} min-h-screen bg-background antialiased selection:bg-primary/30`}>
+      <body className={`${inter.variable} ${inter.className} min-h-screen bg-background antialiased selection:bg-primary/30`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

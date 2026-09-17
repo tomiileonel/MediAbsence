@@ -1,11 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { revalidatePath } from "next/cache";
 import {
   createAbsenceRequest,
   getMyRequests,
   getPendingRequests,
   reviewAbsenceRequest,
 } from "@/app/actions/absence";
-import { ValidationError } from "@/lib/errors/domain-error";
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
@@ -36,7 +36,7 @@ describe("absence actions", () => {
     vi.clearAllMocks();
   });
 
-  it("validates and creates absence request from FormData", async () => {
+  it("validates and creates absence request from FormData, returning actionOk and revalidating", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       id: "u-1",
       role: "RESIDENTE",
@@ -69,18 +69,23 @@ describe("absence actions", () => {
     formData.set("endDate", "2026-09-03");
     formData.set("reason", "Gripe A");
 
-    const summary = await createAbsenceRequest(formData);
-    expect(summary.id).toBe("req-1");
-    expect(summary.status).toBe("PENDING");
+    const result = await createAbsenceRequest(formData);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.id).toBe("req-1");
+      expect(result.data.status).toBe("PENDING");
+    }
     expect(createAbsenceRequestForUser).toHaveBeenCalledWith("u-1", {
       type: "SICK_LEAVE",
       startDate: new Date("2026-09-01T00:00:00.000Z"),
       endDate: new Date("2026-09-03T00:00:00.000Z"),
       reason: "Gripe A",
     });
+    expect(revalidatePath).toHaveBeenCalledWith("/solicitar");
+    expect(revalidatePath).toHaveBeenCalledWith("/solicitudes");
   });
 
-  it("rejects invalid form data with ValidationError", async () => {
+  it("rejects invalid form data returning actionFailed with validation message", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       id: "u-1",
       role: "RESIDENTE",
@@ -94,10 +99,14 @@ describe("absence actions", () => {
     formData.set("endDate", "2026-09-03");
     formData.set("reason", "");
 
-    await expect(createAbsenceRequest(formData)).rejects.toThrow(ValidationError);
+    const result = await createAbsenceRequest(formData);
+    expect(result).toEqual({
+      ok: false,
+      error: "Revisa el tipo, las fechas y el motivo de la solicitud.",
+    });
   });
 
-  it("fetches requests for the authenticated user", async () => {
+  it("fetches requests for the authenticated user wrapped in actionOk", async () => {
     vi.mocked(requireAuth).mockResolvedValue({
       id: "u-1",
       role: "RESIDENTE",
@@ -107,11 +116,11 @@ describe("absence actions", () => {
     vi.mocked(listAbsenceRequestsForUser).mockResolvedValue([]);
 
     const result = await getMyRequests();
-    expect(result).toEqual([]);
+    expect(result).toEqual({ ok: true, data: [] });
     expect(listAbsenceRequestsForUser).toHaveBeenCalledWith("u-1");
   });
 
-  it("fetches pending requests requiring ADMIN or JEFE role", async () => {
+  it("fetches pending requests requiring ADMIN or JEFE role wrapped in actionOk", async () => {
     vi.mocked(requireRole).mockResolvedValue({
       id: "chief-1",
       role: "JEFE",
@@ -121,11 +130,11 @@ describe("absence actions", () => {
     vi.mocked(listPendingAbsenceRequests).mockResolvedValue([]);
 
     const result = await getPendingRequests();
-    expect(result).toEqual([]);
+    expect(result).toEqual({ ok: true, data: [] });
     expect(requireRole).toHaveBeenCalledWith("ADMIN", "JEFE");
   });
 
-  it("reviews absence request with role authorization and validation", async () => {
+  it("reviews absence request with role authorization and validation, returning actionOk", async () => {
     vi.mocked(requireRole).mockResolvedValue({
       id: "chief-1",
       role: "JEFE",
@@ -152,12 +161,33 @@ describe("absence actions", () => {
 
     vi.mocked(reviewAbsenceRequestForUser).mockResolvedValue(fakeReviewed);
 
-    const summary = await reviewAbsenceRequest("req-1", "APPROVED", "Aprobado");
-    expect(summary.status).toBe("APPROVED");
+    const result = await reviewAbsenceRequest("req-1", "APPROVED", "Aprobado");
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.status).toBe("APPROVED");
+    }
     expect(reviewAbsenceRequestForUser).toHaveBeenCalledWith("chief-1", {
       requestId: "req-1",
       decision: "APPROVED",
       notes: "Aprobado",
+    });
+    expect(revalidatePath).toHaveBeenCalledWith("/jefe");
+    expect(revalidatePath).toHaveBeenCalledWith("/admin");
+    expect(revalidatePath).toHaveBeenCalledWith("/solicitudes");
+  });
+
+  it("rejects invalid review input returning actionFailed", async () => {
+    vi.mocked(requireRole).mockResolvedValue({
+      id: "chief-1",
+      role: "JEFE",
+      name: "Jefe",
+      email: "jefe@hospital.org",
+    });
+
+    const result = await reviewAbsenceRequest("", "APPROVED");
+    expect(result).toEqual({
+      ok: false,
+      error: "Revisa la decisión, el identificador y las notas.",
     });
   });
 });

@@ -1,7 +1,7 @@
 import type { AuditAction, Prisma } from "@prisma/client";
 
 export interface AuditRecordInput {
-  actorId: string;
+  actorId: string | null;
   action: AuditAction;
   entityType: string;
   entityId: string;
@@ -9,10 +9,10 @@ export interface AuditRecordInput {
 }
 
 export async function recordAudit(
-  transaction: Prisma.TransactionClient,
+  client: { auditLog: { create: (args: Prisma.AuditLogCreateArgs) => Promise<unknown> } },
   input: AuditRecordInput,
 ): Promise<void> {
-  await transaction.auditLog.create({
+  await client.auditLog.create({
     data: {
       actorId: input.actorId,
       action: input.action,
@@ -20,5 +20,5 @@ export async function recordAudit(
       entityId: input.entityId,
       metadata: input.metadata,
     },
-});
+  });
 }

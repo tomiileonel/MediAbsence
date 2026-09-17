@@ -71,6 +71,9 @@ export default function LoginPage() {
                   aria-describedby="email-help"
                   className="h-10"
                 />
+                <p id="email-help" className="text-xs text-muted-foreground">
+                  Ingresa tu correo institucional asignado.
+                </p>
               </div>
 
               <div className="space-y-2">

@@ -1,6 +1,33 @@
 import type { NextAuthConfig } from "next-auth";
 import { getRoleForPath, getRoleHomePath, isAppRole } from "./src/modules/auth/roles";
 
+export type RouteDecision =
+  | { type: "allow" }
+  | { type: "redirect"; to: string };
+
+export function resolveRouteDecision(args: {
+  isAuthenticated: boolean;
+  role: unknown;
+  path: string;
+}): RouteDecision {
+  const requiredRole = getRoleForPath(args.path);
+  if (requiredRole) {
+    if (!args.isAuthenticated) {
+      return { type: "redirect", to: "/login" };
+    }
+
+    if (!isAppRole(args.role) || args.role !== requiredRole) {
+      return { type: "redirect", to: "/forbidden" };
+    }
+  }
+
+  if (args.isAuthenticated && isAppRole(args.role) && args.path === "/login") {
+    return { type: "redirect", to: getRoleHomePath(args.role) };
+  }
+
+  return { type: "allow" };
+}
+
 export default {
   // El middleware Edge no importa Prisma ni bcrypt. El provider real vive en auth.ts.
   providers: [],
@@ -9,22 +36,14 @@ export default {
   },
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      const path = nextUrl.pathname;
-      const isAuthRoute = path === "/login";
-      const requiredRole = getRoleForPath(path);
+      const decision = resolveRouteDecision({
+        isAuthenticated: Boolean(auth?.user),
+        role: auth?.user?.role,
+        path: nextUrl.pathname,
+      });
 
-      if (requiredRole) {
-        if (!auth?.user) {
-          return false;
-        }
-
-        if (!isAppRole(auth.user.role) || auth.user.role !== requiredRole) {
-          return Response.redirect(new URL("/forbidden", nextUrl));
-        }
-      }
-
-      if (auth?.user && isAuthRoute && isAppRole(auth.user.role)) {
-        return Response.redirect(new URL(getRoleHomePath(auth.user.role), nextUrl));
+      if (decision.type === "redirect") {
+        return Response.redirect(new URL(decision.to, nextUrl));
       }
 
       return true;

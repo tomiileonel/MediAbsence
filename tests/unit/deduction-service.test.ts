@@ -75,4 +75,62 @@ describe("policy-driven payroll deduction", () => {
       policy: { ...calendarDaysPolicy, divisorDays: 0 },
     })).toThrow();
   });
+
+  describe("rounding fraction branches (DOWN, HALF_UP, UP)", () => {
+    it("differentiates DOWN, HALF_UP, and UP with non-zero remainder", () => {
+      // 1 day, salary 100 minor, divisor 30 => 100/30 = 3 with remainder 10
+      // 10 * 2 = 20 < 30
+      const baseInput = {
+        monthlySalaryMinor: BigInt(100),
+        startDate: "2026-08-01",
+        endDate: "2026-08-01",
+        holidays: new Set<string>(),
+      };
+
+      const down = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "DOWN" },
+      });
+      const halfUp = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "HALF_UP" },
+      });
+      const up = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "UP" },
+      });
+
+      expect(down.deductionMinor).toBe(BigInt(3));
+      expect(halfUp.deductionMinor).toBe(BigInt(3));
+      expect(up.deductionMinor).toBe(BigInt(4));
+    });
+
+    it("breaks ties upward for HALF_UP when remainder * 2 >= divisor", () => {
+      // 1 day, salary 15 minor, divisor 30 => 15/30 = 0 with remainder 15
+      // 15 * 2 = 30 >= 30
+      const baseInput = {
+        monthlySalaryMinor: BigInt(15),
+        startDate: "2026-08-01",
+        endDate: "2026-08-01",
+        holidays: new Set<string>(),
+      };
+
+      const down = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "DOWN" },
+      });
+      const halfUp = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "HALF_UP" },
+      });
+      const up = calculateDeduction({
+        ...baseInput,
+        policy: { ...calendarDaysPolicy, rounding: "UP" },
+      });
+
+      expect(down.deductionMinor).toBe(BigInt(0));
+      expect(halfUp.deductionMinor).toBe(BigInt(1));
+      expect(up.deductionMinor).toBe(BigInt(1));
+    });
+  });
 });

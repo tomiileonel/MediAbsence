@@ -22,7 +22,7 @@ Domain Model & Invariants
           ▼
 Repositories / Prisma boundary
           ▼
-MySQL (engine decision pending)
+PostgreSQL (Neon / standard PostgreSQL)
 ```
 
 ## Design principles
@@ -40,7 +40,7 @@ MySQL (engine decision pending)
 1. ¿Credentials es el mecanismo oficial o código muerto?
 2. ¿Cuál es la matriz real `role × action × resource × condition`?
 3. ¿Existe tenant/organización o es single-tenant?
-4. ¿MySQL es la fuente efectiva o el contexto debe corregirse?
+4. Decisión confirmada: PostgreSQL 16+ adoptado como motor definitivo con migraciones en prisma/migrations.
 5. ¿Se conserva monolito modular o se separa una API/BFF?
 
 Hasta responderlas, el target es una propuesta `INFERRED`, no un ADR aprobado.

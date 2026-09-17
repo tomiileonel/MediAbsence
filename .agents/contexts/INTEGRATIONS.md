@@ -1,27 +1,16 @@
-# Integrations Context
-
-This file describes external systems connected to THIS project.
+# Integrations Context — MediAbsence
 
 ## Providers
 
 | Provider | Purpose | Trust boundary | Auth method | Criticality |
 |---|---|---|---|---|
-| | | | | |
-
-## Webhooks
-- Providers:
-- Signature verification:
-- Replay protection:
-- Idempotency strategy:
-
-## External API behavior
-- Timeout defaults:
-- Retry policy:
-- Rate-limit handling:
-- Failure fallback:
+| PostgreSQL (Neon Serverless) | Almacenamiento relacional transaccional y pistas de auditoría | Red interna / VPC segura | Connection string TLS (`DATABASE_URL`) | Bloqueante |
+| Auth.js Credentials Provider | Autenticación interna institucional | Servidor Next.js (Node.js runtime) | bcrypt hash verification | Bloqueante |
 
 ## Secrets
-Document variable NAMES only. Never document secret VALUES.
+- `DATABASE_URL`: Cadena de conexión segura a PostgreSQL.
+- `AUTH_SECRET`: Secreto criptográfico para firma y cifrado de JWTs de sesión.
 
-## Open questions
--
+## External API behavior
+- Base de datos: pooling de conexiones gestionado por Prisma.
+- Timeout de conexión: 10s en serverless.

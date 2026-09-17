@@ -10,7 +10,7 @@ Next.js App Router
   ├── src/app/api/auth/...        → Auth.js handlers
   ├── src/components              → UI primitives / theme
   ├── src/lib/prisma.ts            → Prisma singleton
-  └── prisma/schema.prisma         → MySQL model
+  └── prisma/schema.prisma         → PostgreSQL model
 ```
 
 `src/app`, `src/components`, `src/lib` y `prisma` son límites observables. No existe una capa de dominio o aplicación independiente de las Server Actions.

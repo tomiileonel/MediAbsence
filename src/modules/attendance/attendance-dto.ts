@@ -8,6 +8,9 @@ export interface AttendanceSummary {
   status: Attendance["status"];
   location: string | null;
 }
+export function toAttendanceSummary(attendance: null): null;
+export function toAttendanceSummary(attendance: Attendance): AttendanceSummary;
+export function toAttendanceSummary(attendance: Attendance | null): AttendanceSummary | null;
 export function toAttendanceSummary(attendance: Attendance | null): AttendanceSummary | null {
   if (!attendance) {
     return null;

@@ -11,7 +11,7 @@
 
 ## Data
 - Prisma: 5.22.0
-- PostgreSQL / SQLite (Prisma Client)
+- Database: PostgreSQL 16+ (Neon Serverless / standard PostgreSQL)
 
 ## UI
 - Tailwind: v4
@@ -21,5 +21,6 @@
 - Auth.js / Next-Auth: 5.0.0-beta.30 + @auth/prisma-adapter, bcryptjs
 
 ## Testing & Quality
+- Test Runner: Vitest 4.x (`pnpm test`)
 - ESLint: 9.x
-- Typecheck: tsc --noEmit
+- Typecheck: `pnpm run typecheck` (`tsc --noEmit`)

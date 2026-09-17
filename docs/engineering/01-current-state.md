@@ -11,7 +11,7 @@
 ## VERIFIED
 
 - Next.js App Router 16.1.6, React 19.2.3 y TypeScript strict están declarados en `package.json`, lockfile y `tsconfig.json`.
-- Prisma 5.22.0 usa datasource `mysql` en `prisma/schema.prisma`.
+- Prisma 5.22.0 usa datasource `postgresql` en `prisma/schema.prisma`.
 - Auth.js/NextAuth 5 beta usa `auth.config.ts`, `auth.ts`, middleware y route handler `/api/auth/[...nextauth]`.
 - El código funcional visible es pequeño: una página principal, dos módulos de Server Actions, un route handler de Auth.js y componentes UI reutilizables.
 - Los workers nativos confirmaron que la página raíz enlaza `/login` y `/solicitar`, pero esas rutas no aparecen en el árbol actual.

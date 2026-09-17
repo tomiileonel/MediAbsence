@@ -35,10 +35,6 @@ function formatTime(value: string): string {
   }
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "No se pudo actualizar la asistencia.";
-}
-
 export function AttendancePanel({ initialAttendance }: AttendancePanelProps) {
   const [attendance, setAttendance] = useState(initialAttendance);
   const [location, setLocation] = useState("");
@@ -46,34 +42,30 @@ export function AttendancePanel({ initialAttendance }: AttendancePanelProps) {
 
   function handleCheckIn(): void {
     startTransition(async () => {
-      try {
-        const result = await checkIn(location.trim() || undefined);
-        setAttendance(result);
-        setLocation("");
-        if (result) {
-          toast.success("Ingreso registrado correctamente", {
-            description: `Hora de ingreso: ${formatTime(result.timeIn)}`,
-          });
-        }
-      } catch (error: unknown) {
-        toast.error(getErrorMessage(error));
+      const result = await checkIn(location.trim() || undefined);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
+      setAttendance(result.data);
+      setLocation("");
+      toast.success("Ingreso registrado correctamente", {
+        description: `Hora de ingreso: ${formatTime(result.data.timeIn)}`,
+      });
     });
   }
 
   function handleCheckOut(): void {
     startTransition(async () => {
-      try {
-        const result = await checkOut();
-        setAttendance(result);
-        if (result) {
-          toast.success("Salida registrada correctamente", {
-            description: result.timeOut ? `Hora de egreso: ${formatTime(result.timeOut)}` : undefined,
-          });
-        }
-      } catch (error: unknown) {
-        toast.error(getErrorMessage(error));
+      const result = await checkOut();
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
+      setAttendance(result.data);
+      toast.success("Salida registrada correctamente", {
+        description: result.data.timeOut ? `Hora de egreso: ${formatTime(result.data.timeOut)}` : undefined,
+      });
     });
   }
 

@@ -5,7 +5,8 @@ import {
   reviewAbsenceRequestForUser,
   type AbsenceRequestView,
 } from "@/modules/absences/application/absence-service";
-import { ConflictError, NotFoundError } from "@/lib/errors/domain-error";
+import { ConflictError, ForbiddenError, NotFoundError } from "@/lib/errors/domain-error";
+import { recordAudit } from "@/modules/audit/record-audit";
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -15,6 +16,10 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(),
       create: vi.fn(),
       updateMany: vi.fn(),
+      count: vi.fn(),
+    },
+    user: {
+      findUnique: vi.fn(),
     },
   },
 }));
@@ -40,7 +45,7 @@ describe("absence service", () => {
     vi.clearAllMocks();
   });
 
-  it("creates an absence request within a transaction and logs audit", async () => {
+  it("creates an absence request within a transaction when no overlap exists", async () => {
     const fakeCreated: AbsenceRequestView = {
       id: "req-1",
       userId: "u-1",
@@ -61,6 +66,7 @@ describe("absence service", () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
       const tx = {
         absenceRequest: {
+          count: vi.fn().mockResolvedValue(0),
           create: vi.fn().mockResolvedValue(fakeCreated),
         },
       };
@@ -76,6 +82,27 @@ describe("absence service", () => {
 
     expect(result.id).toBe("req-1");
     expect(result.status).toBe("PENDING");
+  });
+
+  it("throws ConflictError when an overlapping active request exists for the user", async () => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+      const tx = {
+        absenceRequest: {
+          count: vi.fn().mockResolvedValue(1),
+          create: vi.fn(),
+        },
+      };
+      return (callback as TransactionCallback<AbsenceRequestView>)(tx);
+    });
+
+    await expect(
+      createAbsenceRequestForUser("u-1", {
+        type: "VACATION",
+        startDate: new Date("2026-10-05"),
+        endDate: new Date("2026-10-12"),
+        reason: "Solapada",
+      }),
+    ).rejects.toThrow(ConflictError);
   });
 
   it("lists pending requests ordered by startDate and createdAt", async () => {
@@ -108,14 +135,34 @@ describe("absence service", () => {
     });
   });
 
-  it("reviews a pending request successfully to APPROVED", async () => {
+  it("prohibits reviewer from self-reviewing their own absence request", async () => {
+    vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
+      const tx = {
+        absenceRequest: {
+          findUnique: vi.fn().mockResolvedValue({ id: "req-self", userId: "chief-1", status: "PENDING" }),
+          updateMany: vi.fn(),
+        },
+      };
+      return (callback as TransactionCallback<unknown>)(tx);
+    });
+
+    await expect(
+      reviewAbsenceRequestForUser("chief-1", {
+        requestId: "req-self",
+        decision: "APPROVED",
+        notes: "Auto-aprobación",
+      }),
+    ).rejects.toThrow(ForbiddenError);
+  });
+
+  it("reviews a pending request successfully to APPROVED and computes payroll deduction if salary is set", async () => {
     const fakeReviewed: AbsenceRequestView = {
       id: "req-1",
       userId: "u-1",
-      type: "SICK_LEAVE",
-      startDate: new Date(),
-      endDate: new Date(),
-      reason: "Gripe",
+      type: "VACATION",
+      startDate: new Date("2026-10-05T00:00:00.000Z"), // Monday
+      endDate: new Date("2026-10-07T00:00:00.000Z"),   // Wednesday (3 business days)
+      reason: "Vacaciones",
       status: "APPROVED",
       reviewedBy: "chief-1",
       reviewDttm: new Date(),
@@ -129,8 +176,14 @@ describe("absence service", () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
       const tx = {
         absenceRequest: {
+          findUnique: vi
+            .fn()
+            .mockResolvedValueOnce({ id: "req-1", userId: "u-1", status: "PENDING" })
+            .mockResolvedValueOnce(fakeReviewed),
           updateMany: vi.fn().mockResolvedValue({ count: 1 }),
-          findUnique: vi.fn().mockResolvedValue(fakeReviewed),
+        },
+        user: {
+          findUnique: vi.fn().mockResolvedValue({ monthlySalaryMinor: BigInt(3000000) }),
         },
       };
       return (callback as TransactionCallback<AbsenceRequestView>)(tx);
@@ -144,14 +197,26 @@ describe("absence service", () => {
 
     expect(result.status).toBe("APPROVED");
     expect(result.reviewedBy).toBe("chief-1");
+    // 3 days / 30 * 3,000,000 = 300,000
+    expect(recordAudit).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        action: "ABSENCE_APPROVED",
+        metadata: expect.objectContaining({
+          status: "APPROVED",
+          absenceDays: 3,
+          deductionMinor: "300000",
+        }),
+      }),
+    );
   });
 
   it("throws ConflictError if the request was already reviewed", async () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
       const tx = {
         absenceRequest: {
+          findUnique: vi.fn().mockResolvedValue({ id: "req-1", userId: "u-1", status: "PENDING" }),
           updateMany: vi.fn().mockResolvedValue({ count: 0 }),
-          findUnique: vi.fn().mockResolvedValue({ id: "req-1", status: "REJECTED" }),
         },
       };
       return (callback as TransactionCallback<unknown>)(tx);
@@ -170,8 +235,8 @@ describe("absence service", () => {
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
       const tx = {
         absenceRequest: {
-          updateMany: vi.fn().mockResolvedValue({ count: 0 }),
           findUnique: vi.fn().mockResolvedValue(null),
+          updateMany: vi.fn(),
         },
       };
       return (callback as TransactionCallback<unknown>)(tx);

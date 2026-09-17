@@ -1,8 +1,18 @@
 import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
-function run(command, args) {
+const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+function run(command, args, timeoutMs = 30_000) {
   try {
-    execFileSync(command, args, { stdio: "ignore" });
+    execFileSync(command, args, {
+      stdio: "ignore",
+      cwd: repoRoot,
+      timeout: timeoutMs,
+      shell: true,
+    });
     return true;
   } catch {
     return false;
@@ -10,14 +20,12 @@ function run(command, args) {
 }
 
 const checks = [];
+checks.push(["git-diff", run("git", ["diff", "--check"])]);
 
-// Lightweight non-destructive checks only
-checks.push(["git diff --check", run("git", ["diff", "--check"])]);
-
-const hasPackageJson = run("node", ["-e", "require('fs').accessSync('package.json')"]);
-if (hasPackageJson) {
-  checks.push(["typecheck", run("npm", ["run", "typecheck", "--if-present"])]);  
-  checks.push(["lint", run("npm", ["run", "lint", "--if-present"])]);
+if (existsSync(join(repoRoot, "package.json"))) {
+  checks.push(["typecheck", run("npm", ["run", "typecheck"])]);
+  checks.push(["lint", run("npm", ["run", "lint"])]);
+  checks.push(["unit-tests", run("npm", ["run", "test"])]);
 }
 
 const failed = checks.filter(([, ok]) => !ok);
@@ -27,9 +35,11 @@ if (failed.length === 0) {
   process.exit(0);
 }
 
-console.log(JSON.stringify({
-  decision: "block",
-  reason: "Stop gate found failed local verification checks.",
-  failed: failed.map(([name]) => name)
-}));
+console.log(
+  JSON.stringify({
+    decision: "block",
+    reason: "Stop gate found failed local verification checks.",
+    failed: failed.map(([name]) => name),
+  }),
+);
 process.exit(2);

@@ -21,7 +21,7 @@ Roadmap inicial de discovery. No se ejecutaron pasos de implementación.
 
 1. Confirmar actores y reglas de dominio sin cambiar código.
 2. Resolver `RISK-001` como diseño: autenticación, RBAC, API y ownership.
-3. Decidir MySQL vs contexto declarado y estrategia de migraciones.
+3. Confirmar PostgreSQL como base de datos definitiva y estrategia de migraciones versionadas.
 4. Crear baseline de tests antes de tocar seguridad.
 5. Aprobar ADRs.
 6. Implementar en cambios pequeños, cada uno con gates.

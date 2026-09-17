@@ -43,10 +43,6 @@ function formatDate(value: string): string {
   }).format(new Date(`${value}T00:00:00.000Z`));
 }
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "No se pudo procesar la solicitud.";
-}
-
 export function ReviewQueue({ initialRequests }: ReviewQueueProps) {
   const [requests, setRequests] = useState(initialRequests);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -62,7 +58,12 @@ export function ReviewQueue({ initialRequests }: ReviewQueueProps) {
 
     startTransition(async () => {
       try {
-        const reviewedRequest = await reviewAbsenceRequest(requestId, decision, noteText);
+        const result = await reviewAbsenceRequest(requestId, decision, noteText);
+        if (!result.ok) {
+          toast.error(result.error);
+          return;
+        }
+        const reviewedRequest = result.data;
         setRequests((current) => current.filter((request) => request.id !== reviewedRequest.id));
         setNotes((current) => {
           const next = { ...current };
@@ -75,9 +76,6 @@ export function ReviewQueue({ initialRequests }: ReviewQueueProps) {
         } else {
           toast.info("Solicitud rechazada");
         }
-      } catch (error: unknown) {
-        const msg = getErrorMessage(error);
-        toast.error(msg);
       } finally {
         setActiveRequestId(null);
       }

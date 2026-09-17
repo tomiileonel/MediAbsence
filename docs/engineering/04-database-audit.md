@@ -2,19 +2,19 @@
 
 ## VERIFIED
 
-- Prisma datasource: `mysql` (`prisma/schema.prisma`).
+- Prisma datasource: `postgresql` (`prisma/schema.prisma`).
 - Auth.js models: `Account`, `Session`, `VerificationToken`, `User`.
 - Core models: `User`, `Attendance`, `AbsenceRequest`.
 - Roles: `ADMIN`, `JEFE`, `PROFESIONAL`, `RESIDENTE`.
 - `Attendance` tiene `@@unique([userId, date])`.
 - `AbsenceRequest` usa `RequestStatus` y `RequestType`, con reviewer opcional y fechas `@db.Date`.
-- Relaciones User → Attendance/AbsenceRequest usan `onDelete: Cascade`.
-- No se observó directorio `prisma/migrations` ni evidencia de schema vivo; G3 no puede cerrarse con el único `schema.prisma` (`DB-001`).
+- Relaciones User → Attendance/AbsenceRequest usan `onDelete: Restrict`.
+- Migraciones PostgreSQL en `prisma/migrations/`.
 - `User.email` es nullable y unique; el comportamiento de múltiples `NULL` depende del motor y no sustituye una política de identidad (`DB-004`).
 
-## INCONSISTENCIA DE CONTEXTO
+## RECONCILIACIÓN DE CONTEXTO
 
-`.agents/contexts/STACK.md` declara PostgreSQL/SQLite, mientras el schema verificable usa MySQL. Esto es `BLOCKING` para G3 hasta reconciliarlo con el entorno real.
+El esquema y `.agents/contexts/STACK.md` convergen en PostgreSQL 16+ con migraciones versionadas y constraints exclusivas `btree_gist`. G3 queda desbloqueado con PostgreSQL como motor estándar.
 
 ## Riesgos
 

@@ -1,4 +1,4 @@
-# Matriz del Engineering Operating System (20 Agentes / 14 Skills)
+# Matriz del Engineering Operating System (20 Agentes / 15 Skills)
 
 ## Estructura y Roles del Equipo
 
@@ -30,7 +30,7 @@
 
 ---
 
-## Mapeo de Skills (14 Skills)
+## Mapeo de Skills (15 Skills)
 
 1. `project-context`: Todos los agentes (convenciones, contextos y reglas del proyecto).
 2. `software-architecture`: `fullstack-orchestrator`, `software-architect`, `code-review`, `migration-refactoring`.
@@ -46,6 +46,7 @@
 12. `observability`: `observability-engineer`.
 13. `performance`: `performance-engineer`.
 14. `release-engineering`: `fullstack-orchestrator`, `release-manager`, `devops`.
+15. `creador-de-agentes`: `fullstack-orchestrator`.
 
 ---
 

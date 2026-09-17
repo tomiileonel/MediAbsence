@@ -1,31 +1,16 @@
-# Observability Context
-
-This file describes how THIS project is observed in production.
+# Observability Context — MediAbsence
 
 ## Logging
-- Format:
-- Correlation/request ID:
-- Sensitive-data redaction:
+- Format: JSON estructurado via `src/lib/observability/logger.ts`.
+- Levels: `info`, `warn`, `error`.
+- Sensitive-data redaction: No se registran contraseñas ni datos personales identificables crudos; solo IDs (`actorId`, `attendanceId`, `requestId`).
 
-## Metrics
-- Application metrics:
-- Business metrics:
+## Audit Traces
+- Tabla inmutable `audit_logs` con `action`, `actorId`, `entityType`, `entityId`, `metadata` (JSONB) y timestamp `created_at`.
+- Eventos de autenticación: `LOGIN_SUCCEEDED`, `LOGIN_FAILED`.
+- Eventos asistenciales: `ATTENDANCE_CHECKED_IN`, `ATTENDANCE_CHECKED_OUT`.
+- Eventos de licencias: `ABSENCE_CREATED`, `ABSENCE_APPROVED`, `ABSENCE_REJECTED` (con metadata de deducción salarial proyectada).
 
-## Tracing
-- Provider:
-- Critical traces:
-
-## Error tracking
-- Provider:
-- Alerting:
-
-## SLO / SLI
-- Availability:
-- Latency:
-- Error rate:
-
-## Critical user journeys
--
-
-## Open questions
--
+## Metrics & Health
+- Verificación de consistencia de base de datos vía consultas estructuradas e índices únicos.
+- SLI de disponibilidad: 99.9% uptime en App Router y base de datos.

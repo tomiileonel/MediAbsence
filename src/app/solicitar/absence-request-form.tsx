@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent } from "react";
+import { useTransition } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createAbsenceRequest } from "@/app/actions/absence";
+import { REQUEST_TYPES } from "@/lib/validation/absence.schema";
 import {
   Calendar,
   CalendarDays,
@@ -15,16 +19,52 @@ import {
   Send,
 } from "lucide-react";
 
-function getErrorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "No se pudo registrar la solicitud de ausencia.";
-}
+const clientAbsenceSchema = z
+  .object({
+    type: z.enum(REQUEST_TYPES, {
+      message: "Seleccioná una categoría válida.",
+    }),
+    startDate: z.string().trim().min(1, "La fecha de inicio es obligatoria."),
+    endDate: z.string().trim().min(1, "La fecha de fin es obligatoria."),
+    reason: z
+      .string()
+      .trim()
+      .min(1, "El motivo es obligatorio.")
+      .max(2000, "El motivo no puede superar los 2000 caracteres."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.startDate && data.endDate && data.startDate > data.endDate) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["endDate"],
+        message: "La fecha de fin no puede ser anterior a la fecha de inicio.",
+      });
+    }
+  });
+
+type ClientAbsenceFormData = z.infer<typeof clientAbsenceSchema>;
 
 export function AbsenceRequestForm() {
-  const formReference = useRef<HTMLFormElement>(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [type, setType] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<ClientAbsenceFormData>({
+    resolver: zodResolver(clientAbsenceSchema),
+    defaultValues: {
+      type: "" as unknown as (typeof REQUEST_TYPES)[number],
+      startDate: "",
+      endDate: "",
+      reason: "",
+    },
+  });
+
+  const startDate = useWatch({ control, name: "startDate" });
+  const endDate = useWatch({ control, name: "endDate" });
 
   // Dynamic day count
   let calculatedDays: number | null = null;
@@ -34,28 +74,24 @@ export function AbsenceRequestForm() {
     calculatedDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-
-    if (startDate && endDate && startDate > endDate) {
-      toast.error("La fecha de fin no puede ser anterior a la fecha de inicio.");
-      return;
-    }
-
+  function onSubmit(data: ClientAbsenceFormData): void {
     startTransition(async () => {
-      try {
-        await createAbsenceRequest(formData);
-        formReference.current?.reset();
-        setStartDate("");
-        setEndDate("");
-        setType("");
-        toast.success("Solicitud creada con éxito", {
-          description: "Tu solicitud ha sido enviada y quedó en la bandeja de revisión.",
-        });
-      } catch (error: unknown) {
-        toast.error(getErrorMessage(error));
+      const formData = new FormData();
+      formData.set("type", data.type);
+      formData.set("startDate", data.startDate);
+      formData.set("endDate", data.endDate);
+      formData.set("reason", data.reason.trim());
+
+      const result = await createAbsenceRequest(formData);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
       }
+
+      reset();
+      toast.success("Solicitud creada con éxito", {
+        description: "Tu solicitud ha sido enviada y quedó en la bandeja de revisión.",
+      });
     });
   }
 
@@ -75,18 +111,18 @@ export function AbsenceRequestForm() {
         </div>
       </CardHeader>
       <CardContent>
-        <form ref={formReference} onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
           <div className="space-y-2">
             <Label htmlFor="type" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Tipo de ausencia o licencia
             </Label>
             <select
               id="type"
-              name="type"
-              value={type}
-              onChange={(e) => setType(e.target.value)}
+              {...register("type")}
+              aria-invalid={Boolean(errors.type)}
+              aria-describedby={errors.type ? "type-error" : undefined}
               className="border-input h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:opacity-50"
-              required
+              disabled={isPending}
             >
               <option value="" disabled>
                 -- Seleccioná una categoría --
@@ -97,6 +133,11 @@ export function AbsenceRequestForm() {
               <option value="CONGRESS">Congreso, jornada científica o capacitación</option>
               <option value="OTHER">Otro motivo justificado</option>
             </select>
+            {errors.type && (
+              <p id="type-error" role="alert" className="text-xs text-destructive font-medium">
+                {errors.type.message}
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -106,19 +147,18 @@ export function AbsenceRequestForm() {
               </Label>
               <Input
                 id="startDate"
-                name="startDate"
                 type="date"
-                value={startDate}
-                onChange={(e) => {
-                  setStartDate(e.target.value);
-                  if (endDate && e.target.value > endDate) {
-                    setEndDate(e.target.value);
-                  }
-                }}
-                required
+                {...register("startDate")}
+                aria-invalid={Boolean(errors.startDate)}
+                aria-describedby={errors.startDate ? "startDate-error" : undefined}
                 disabled={isPending}
                 className="bg-background/50"
               />
+              {errors.startDate && (
+                <p id="startDate-error" role="alert" className="text-xs text-destructive font-medium">
+                  {errors.startDate.message}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="endDate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
@@ -126,15 +166,19 @@ export function AbsenceRequestForm() {
               </Label>
               <Input
                 id="endDate"
-                name="endDate"
                 type="date"
                 min={startDate || undefined}
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                required
+                {...register("endDate")}
+                aria-invalid={Boolean(errors.endDate)}
+                aria-describedby={errors.endDate ? "endDate-error" : undefined}
                 disabled={isPending}
                 className="bg-background/50"
               />
+              {errors.endDate && (
+                <p id="endDate-error" role="alert" className="text-xs text-destructive font-medium">
+                  {errors.endDate.message}
+                </p>
+              )}
             </div>
           </div>
 
@@ -154,16 +198,23 @@ export function AbsenceRequestForm() {
             </Label>
             <textarea
               id="reason"
-              name="reason"
+              {...register("reason")}
+              aria-invalid={Boolean(errors.reason)}
+              aria-describedby={errors.reason ? "reason-error" : "reason-help"}
               placeholder="Indica el motivo de la solicitud, servicio afectado, o antecedentes relevantes..."
               className="min-h-28 w-full rounded-md border bg-background/50 px-3 py-2 text-sm placeholder:text-muted-foreground outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:opacity-50"
               maxLength={2000}
-              required
               disabled={isPending}
             />
-            <p className="text-[11px] text-muted-foreground">
-              Máximo 2000 caracteres. Esta información será evaluada por el jefe de servicio o administrador.
-            </p>
+            {errors.reason ? (
+              <p id="reason-error" role="alert" className="text-xs text-destructive font-medium">
+                {errors.reason.message}
+              </p>
+            ) : (
+              <p id="reason-help" className="text-xs text-muted-foreground">
+                Máximo 2000 caracteres. Esta información será evaluada por el jefe de servicio o administrador.
+              </p>
+            )}
           </div>
 
           <div className="pt-2">

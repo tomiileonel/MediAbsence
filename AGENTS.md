@@ -13,9 +13,9 @@ La entrada única es `fullstack-orchestrator`, definido en `.agents/agents/fulls
 - `pnpm install`
 - Desarrollo: `pnpm dev`
 - Lint: `pnpm lint`
-- Typecheck manual: `pnpm exec tsc --noEmit` (no hay script dedicado).
+- Typecheck: `pnpm run typecheck` (`tsc --noEmit`).
 - Build: `pnpm build`
-- Tests: no hay script declarado; documentar el check adicional si se incorpora.
+- Tests: `pnpm test` (`vitest run` — suite de regresión completa).
 
 ## Arquitectura y estilo
 
